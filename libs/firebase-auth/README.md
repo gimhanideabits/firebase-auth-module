@@ -286,7 +286,3 @@ export class DatabaseCredentialsProvider extends FirebaseCredentialsProvider {
   }
 }
 ```
-
-## License
-
-This library is licensed under the MIT License.

@@ -23,18 +23,34 @@ export class UserService {
     }
   }
 
-  async signin(signinDto: SigninDto): Promise<{ user: UserResponseDto; customToken: string }> {
+  async signin(signinDto: SigninDto): Promise<{ user: UserResponseDto; idToken: string; refreshToken: string }> {
     try {
-      const customToken = await this.firebaseAuth.issueCustomToken({
-        uid: signinDto.email,
-        customClaims: { email: signinDto.email },
+      const credentials = await this.firebaseAuth.getCredentials();
+      
+      const response = await fetch(`https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=${credentials.webApiKey}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: signinDto.email,
+          password: signinDto.password,
+          returnSecureToken: true,
+        }),
       });
 
+      if (!response.ok) {
+        throw new UnauthorizedException('Invalid credentials');
+      }
+
+      const data = await response.json();
+      
       const userRecord = await this.getUserByEmail(signinDto.email);
       
       return {
         user: this.mapUserRecordToResponse(userRecord),
-        customToken,
+        idToken: data.idToken,
+        refreshToken: data.refreshToken,
       };
     } catch (error) {
       throw new UnauthorizedException('Invalid credentials');
@@ -52,6 +68,15 @@ export class UserService {
 
   async getUserByEmail(email: string) {
     return await this.firebaseAuth.getUserByEmail(email);
+  }
+
+  async refreshToken(refreshToken: string) {
+    try {
+      const result = await this.firebaseAuth.refreshToken({ refreshToken });
+      return result;
+    } catch (error) {
+      throw new UnauthorizedException('Invalid refresh token');
+    }
   }
 
   private mapUserRecordToResponse(userRecord: any): UserResponseDto {

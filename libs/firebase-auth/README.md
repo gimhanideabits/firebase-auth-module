@@ -4,19 +4,20 @@ A modular NestJS library that wraps Firebase Admin/Auth and provides clean inter
 
 ## Features
 
-- **User Creation**: Create users with custom claims and metadata
+- **User Management**: Create, retrieve, and delete users
+- **Authentication**: Sign up, sign in, and sign out users
 - **Token Verification**: Verify ID tokens with optional scope validation
-- **Token Issuance**: Issue custom tokens for server-to-server authentication
 - **Token Refresh**: Refresh expired tokens
 - **Role-based Access**: Verify tokens with required scopes
 - **Dependency Injection**: Full NestJS DI support
 - **Credential Agnostic**: Flexible credential management via providers
 - **Type Safety**: Full TypeScript support with typed errors
+- **REST API Integration**: Uses Firebase REST API for authentication
 
 ## Installation
 
 ```bash
-npm install firebase-admin firebase
+npm install firebase-admin firebase @nestjs/config class-validator class-transformer
 ```
 
 ## Quick Start
@@ -30,18 +31,63 @@ FIREBASE_PROJECT_ID=your-project-id
 FIREBASE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n"
 FIREBASE_CLIENT_EMAIL=firebase-adminsdk-xxxxx@your-project.iam.gserviceaccount.com
 FIREBASE_WEB_API_KEY=your-web-api-key
+PORT=3000
+NODE_ENV=development
 ```
 
-### 2. Module Registration
+### 2. Firebase Service Account Setup
+
+Create a `firebase-service-account.json` file in your project root:
+
+```json
+{
+  "type": "service_account",
+  "project_id": "your-project-id",
+  "private_key_id": "key-id",
+  "private_key": "-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n",
+  "client_email": "firebase-adminsdk-xxxxx@your-project.iam.gserviceaccount.com",
+  "client_id": "client-id",
+  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+  "token_uri": "https://oauth2.googleapis.com/token",
+  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/firebase-adminsdk-xxxxx%40your-project.iam.gserviceaccount.com"
+}
+```
+
+### 3. Module Registration
+
+#### Using JSON File Credentials (Recommended)
+
+```typescript
+import { Module } from '@nestjs/common';
+import { ConfigModule } from '@nestjs/config';
+import { FirebaseAuthModule, JsonFileCredentialsProvider } from '@app/firebase-auth';
+
+@Module({
+  imports: [
+    ConfigModule.forRoot({
+      isGlobal: true,
+    }),
+    FirebaseAuthModule.forRoot({
+      credentialsProvider: new JsonFileCredentialsProvider(),
+    }),
+  ],
+})
+export class AppModule {}
+```
 
 #### Using Environment Variables
 
 ```typescript
 import { Module } from '@nestjs/common';
+import { ConfigModule } from '@nestjs/config';
 import { FirebaseAuthModule, EnvironmentCredentialsProvider } from '@app/firebase-auth';
 
 @Module({
   imports: [
+    ConfigModule.forRoot({
+      isGlobal: true,
+    }),
     FirebaseAuthModule.forRoot({
       credentialsProvider: new EnvironmentCredentialsProvider(),
     }),
@@ -50,93 +96,88 @@ import { FirebaseAuthModule, EnvironmentCredentialsProvider } from '@app/firebas
 export class AppModule {}
 ```
 
-#### Using Static Credentials
+### 4. Authentication Endpoints
 
-```typescript
-import { Module } from '@nestjs/common';
-import { FirebaseAuthModule, StaticCredentialsProvider } from '@app/firebase-auth';
+The library provides ready-to-use authentication endpoints:
 
-@Module({
-  imports: [
-    FirebaseAuthModule.forRoot({
-      credentialsProvider: new StaticCredentialsProvider({
-        serviceAccount: {
-          projectId: 'your-project-id',
-          privateKey: '-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n',
-          clientEmail: 'firebase-adminsdk-xxxxx@your-project.iam.gserviceaccount.com',
-        },
-        webApiKey: 'your-web-api-key',
-      }),
-    }),
-  ],
-})
-export class AppModule {}
+#### Sign Up
+```bash
+POST /auth/signup
+Content-Type: application/json
+
+{
+  "email": "user@example.com",
+  "password": "password123",
+  "displayName": "John Doe"
+}
 ```
 
-#### Using Async Configuration
+#### Sign In
+```bash
+POST /auth/signin
+Content-Type: application/json
 
-```typescript
-import { Module } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import { FirebaseAuthModule, StaticCredentialsProvider } from '@app/firebase-auth';
+{
+  "email": "user@example.com",
+  "password": "password123"
+}
 
-@Module({
-  imports: [
-    FirebaseAuthModule.forRootAsync({
-      useFactory: (configService: ConfigService) => {
-        return new StaticCredentialsProvider({
-          serviceAccount: {
-            projectId: configService.get('FIREBASE_PROJECT_ID'),
-            privateKey: configService.get('FIREBASE_PRIVATE_KEY'),
-            clientEmail: configService.get('FIREBASE_CLIENT_EMAIL'),
-          },
-          webApiKey: configService.get('FIREBASE_WEB_API_KEY'),
-        });
-      },
-      inject: [ConfigService],
-    }),
-  ],
-})
-export class AppModule {}
+# Response:
+{
+  "user": {
+    "uid": "user123",
+    "email": "user@example.com",
+    "displayName": "John Doe",
+    "emailVerified": true,
+    "createdAt": "2024-01-01T00:00:00Z",
+    "lastSignInTime": "2024-01-01T12:00:00Z"
+  },
+  "idToken": "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "refreshToken": "refresh_token_here"
+}
 ```
 
-### 3. Using the Service
+#### Refresh Token
+```bash
+POST /auth/refresh
+Content-Type: application/json
 
-```typescript
-import { Injectable } from '@nestjs/common';
-import { FirebaseAuthService } from '@app/firebase-auth';
+{
+  "refreshToken": "your_refresh_token"
+}
 
-@Injectable()
-export class AuthController {
-  constructor(private readonly firebaseAuth: FirebaseAuthService) {}
+# Response:
+{
+  "accessToken": "new_id_token",
+  "refreshToken": "new_refresh_token",
+  "expiresIn": 3600
+}
+```
 
-  async createUser(email: string, password: string) {
-    return await this.firebaseAuth.createUser({
-      email,
-      password,
-      displayName: 'John Doe',
-      customClaims: { role: 'admin', scopes: ['read', 'write'] },
-    });
-  }
+#### Get Profile (Protected)
+```bash
+GET /auth/profile
+Authorization: Bearer YOUR_ID_TOKEN
 
-  async verifyToken(token: string, requiredScopes?: string[]) {
-    return await this.firebaseAuth.verifyToken(token, {
-      requiredScopes,
-    });
-  }
+# Response:
+{
+  "uid": "user123",
+  "email": "user@example.com",
+  "displayName": "John Doe",
+  "emailVerified": true,
+  "createdAt": "2024-01-01T00:00:00Z",
+  "lastSignInTime": "2024-01-01T12:00:00Z"
+}
+```
 
-  async issueCustomToken(uid: string) {
-    return await this.firebaseAuth.issueCustomToken({
-      uid,
-      customClaims: { role: 'user' },
-    });
-  }
+#### Sign Out
+```bash
+POST /auth/signout
+Content-Type: application/json
 
-  async refreshToken(refreshToken: string) {
-    return await this.firebaseAuth.refreshToken({
-      refreshToken,
-    });
-  }
+# Response:
+{
+  "message": "Successfully signed out"
 }
 ```
 
@@ -180,12 +221,40 @@ const customToken = await firebaseAuth.issueCustomToken({
 
 #### `refreshToken(options: RefreshTokenOptions): Promise<RefreshTokenResult>`
 
-Refreshes an expired token.
+Refreshes an expired token using Firebase REST API.
 
 ```typescript
 const result = await firebaseAuth.refreshToken({
   refreshToken: 'refresh_token_here',
 });
+```
+
+#### `getCredentials(): Promise<{ webApiKey: string }>`
+
+Gets Firebase credentials for REST API calls.
+
+```typescript
+const credentials = await firebaseAuth.getCredentials();
+// Returns: { webApiKey: "your-web-api-key" }
+```
+
+### Authentication Guard
+
+Use the `AuthGuard` to protect routes that require authentication:
+
+```typescript
+import { Controller, Get, UseGuards } from '@nestjs/common';
+import { AuthGuard } from './guards/auth.guard';
+
+@Controller('protected')
+export class ProtectedController {
+  @Get('data')
+  @UseGuards(AuthGuard)
+  getProtectedData(@Request() req) {
+    // req.user contains the verified token data
+    return { userId: req.user.uid, email: req.user.email };
+  }
+}
 ```
 
 ### Scope Verification
@@ -214,21 +283,6 @@ The library provides typed errors for all failure cases:
 - `TokenRefreshError`: Failed to refresh token
 - `ConfigurationError`: Firebase configuration error
 
-### Error Codes
-
-```typescript
-import { ERROR_CODES } from '@app/firebase-auth';
-
-// Available error codes:
-ERROR_CODES.INVALID_CREDENTIALS
-ERROR_CODES.USER_CREATION_FAILED
-ERROR_CODES.TOKEN_VERIFICATION_FAILED
-ERROR_CODES.INSUFFICIENT_SCOPE
-ERROR_CODES.TOKEN_ISSUANCE_FAILED
-ERROR_CODES.TOKEN_REFRESH_FAILED
-ERROR_CODES.CONFIGURATION_ERROR
-```
-
 ### Error Handling Example
 
 ```typescript
@@ -253,22 +307,12 @@ try {
 }
 ```
 
-## Plugin Usage (Standalone)
+## Token Flow
 
-For non-NestJS applications, you can use the plugin directly:
-
-```typescript
-import { FirebaseAuthPlugin } from '@app/firebase-auth';
-
-const plugin = FirebaseAuthPlugin.createFromEnvironment();
-await plugin.initialize();
-
-const service = plugin.getService();
-const user = await service.createUser({
-  email: 'user@example.com',
-  password: 'password123',
-});
-```
+1. **Sign Up/Sign In** → Get ID token + refresh token
+2. **Use ID token** for API calls (profile endpoint)
+3. **When ID token expires** → Use refresh token to get new tokens
+4. **Repeat** as needed
 
 ## Custom Credentials Provider
 
@@ -286,3 +330,10 @@ export class DatabaseCredentialsProvider extends FirebaseCredentialsProvider {
   }
 }
 ```
+
+## Available Credential Providers
+
+- `EnvironmentCredentialsProvider`: Reads from environment variables
+- `StaticCredentialsProvider`: Uses static credentials
+- `JsonFileCredentialsProvider`: Reads from firebase-service-account.json file
+

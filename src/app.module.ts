@@ -1,13 +1,17 @@
 import { Module } from '@nestjs/common';
+import { ConfigModule } from '@nestjs/config';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { UserModule } from './user/user.module';
-import { FirebaseAuthModule, EnvironmentCredentialsProvider } from '@app/firebase-auth';
+import { FirebaseAuthModule, JsonFileCredentialsProvider } from '@app/firebase-auth';
 
 @Module({
   imports: [
+    ConfigModule.forRoot({
+      isGlobal: true,
+    }),
     FirebaseAuthModule.forRoot({
-      credentialsProvider: new EnvironmentCredentialsProvider(),
+      credentialsProvider: new JsonFileCredentialsProvider(),
     }),
     UserModule,
   ],

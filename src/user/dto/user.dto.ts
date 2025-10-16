@@ -21,6 +21,11 @@ export class SigninDto {
   password: string;
 }
 
+export class RefreshTokenDto {
+  @IsString()
+  refreshToken: string;
+}
+
 export class UserResponseDto {
   uid: string;
   email: string;

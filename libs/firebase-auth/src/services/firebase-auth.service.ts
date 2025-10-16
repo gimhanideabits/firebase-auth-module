@@ -28,6 +28,7 @@ export class FirebaseAuthService implements OnModuleInit {
   async onModuleInit(): Promise<void> {
     try {
       const credentials = await this.credentialsProvider.getCredentials();
+
       
       this.app = admin.initializeApp({
         credential: admin.credential.cert({
@@ -64,7 +65,9 @@ export class FirebaseAuthService implements OnModuleInit {
 
   async verifyToken(idToken: string, options?: TokenVerificationOptions): Promise<VerifiedToken> {
     try {
+      console.log('Verifying ID token:', idToken.substring(0, 20) + '...');
       const decodedToken = await this.auth.verifyIdToken(idToken);
+      console.log('ID token verified successfully:', decodedToken.uid);
       
       const tokenScopes = decodedToken.scopes as string[] || [];
       const requiredScopes = options?.requiredScopes || [];
@@ -88,10 +91,11 @@ export class FirebaseAuthService implements OnModuleInit {
         scopes: tokenScopes,
       };
     } catch (error) {
+      console.error('ID token verification failed:', error);
       if (error instanceof InsufficientScopeError) {
         throw error;
       }
-      throw new TokenVerificationError('Token verification failed', error as Error);
+      throw new TokenVerificationError('ID token verification failed', error as Error);
     }
   }
 
@@ -126,6 +130,11 @@ export class FirebaseAuthService implements OnModuleInit {
     } catch (error) {
       throw new UserCreationError('Failed to delete user', error as Error);
     }
+  }
+
+  async getCredentials(): Promise<{ webApiKey: string }> {
+    const credentials = await this.credentialsProvider.getCredentials();
+    return { webApiKey: credentials.webApiKey };
   }
 
   async refreshToken(options: RefreshTokenOptions): Promise<RefreshTokenResult> {

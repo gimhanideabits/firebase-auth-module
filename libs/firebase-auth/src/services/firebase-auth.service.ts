@@ -1,4 +1,4 @@
-import { Injectable, OnModuleInit } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import * as admin from 'firebase-admin';
 import { FirebaseCredentialsProvider } from '../providers';
 import {
@@ -19,17 +19,26 @@ import {
 } from '../errors';
 
 @Injectable()
-export class FirebaseAuthService implements OnModuleInit {
-  private auth: admin.auth.Auth;
-  private app: admin.app.App;
+export class FirebaseAuthService {
+  private auth: admin.auth.Auth | null = null;
+  private app: admin.app.App | null = null;
+  private initializationPromise: Promise<void> | null = null;
 
   constructor(private readonly credentialsProvider: FirebaseCredentialsProvider) {}
 
-  async onModuleInit(): Promise<void> {
+  private async initialize(): Promise<void> {
+    if (this.initializationPromise) {
+      return this.initializationPromise;
+    }
+
+    this.initializationPromise = this.performInitialization();
+    return this.initializationPromise;
+  }
+
+  private async performInitialization(): Promise<void> {
     try {
       const credentials = await this.credentialsProvider.getCredentials();
 
-      
       this.app = admin.initializeApp({
         credential: admin.credential.cert({
           projectId: credentials.serviceAccount.projectId,
@@ -45,16 +54,23 @@ export class FirebaseAuthService implements OnModuleInit {
     }
   }
 
+  private async ensureInitialized(): Promise<void> {
+    if (!this.auth || !this.app) {
+      await this.initialize();
+    }
+  }
+
   async createUser(userData: UserCreationData): Promise<admin.auth.UserRecord> {
     try {
-      const userRecord = await this.auth.createUser({
+      await this.ensureInitialized();
+      const userRecord = await this.auth!.createUser({
         email: userData.email,
         password: userData.password,
         displayName: userData.displayName,
       });
 
       if (userData.customClaims) {
-        await this.auth.setCustomUserClaims(userRecord.uid, userData.customClaims);
+        await this.auth!.setCustomUserClaims(userRecord.uid, userData.customClaims);
       }
 
       return userRecord;
@@ -65,8 +81,9 @@ export class FirebaseAuthService implements OnModuleInit {
 
   async verifyToken(idToken: string, options?: TokenVerificationOptions): Promise<VerifiedToken> {
     try {
+      await this.ensureInitialized();
       console.log('Verifying ID token:', idToken.substring(0, 20) + '...');
-      const decodedToken = await this.auth.verifyIdToken(idToken);
+      const decodedToken = await this.auth!.verifyIdToken(idToken);
       console.log('ID token verified successfully:', decodedToken.uid);
       
       const tokenScopes = decodedToken.scopes as string[] || [];
@@ -101,7 +118,8 @@ export class FirebaseAuthService implements OnModuleInit {
 
   async issueCustomToken(options: CustomTokenOptions): Promise<string> {
     try {
-      const customToken = await this.auth.createCustomToken(options.uid, options.customClaims);
+      await this.ensureInitialized();
+      const customToken = await this.auth!.createCustomToken(options.uid, options.customClaims);
       return customToken;
     } catch (error) {
       throw new TokenIssuanceError('Failed to issue custom token', error as Error);
@@ -110,7 +128,8 @@ export class FirebaseAuthService implements OnModuleInit {
 
   async getUser(uid: string): Promise<admin.auth.UserRecord> {
     try {
-      return await this.auth.getUser(uid);
+      await this.ensureInitialized();
+      return await this.auth!.getUser(uid);
     } catch (error) {
       throw new UserCreationError('Failed to get user', error as Error);
     }
@@ -118,7 +137,8 @@ export class FirebaseAuthService implements OnModuleInit {
 
   async getUserByEmail(email: string): Promise<admin.auth.UserRecord> {
     try {
-      return await this.auth.getUserByEmail(email);
+      await this.ensureInitialized();
+      return await this.auth!.getUserByEmail(email);
     } catch (error) {
       throw new UserCreationError('Failed to get user by email', error as Error);
     }
@@ -126,7 +146,8 @@ export class FirebaseAuthService implements OnModuleInit {
 
   async deleteUser(uid: string): Promise<void> {
     try {
-      await this.auth.deleteUser(uid);
+      await this.ensureInitialized();
+      await this.auth!.deleteUser(uid);
     } catch (error) {
       throw new UserCreationError('Failed to delete user', error as Error);
     }

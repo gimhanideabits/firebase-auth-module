@@ -3,3 +3,4 @@ export * from './services';
 export * from './interfaces';
 export * from './errors';
 export * from './providers';
+export * from './facades';

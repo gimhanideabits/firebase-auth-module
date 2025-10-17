@@ -1,5 +1,6 @@
 import { Module, DynamicModule } from '@nestjs/common';
 import { FirebaseAuthService } from '../services/firebase-auth.service';
+import { FirebaseAuthFacadeImpl } from '../facades';
 import { FirebaseCredentialsProvider } from '../providers';
 import type { FirebaseCredentials } from '../interfaces';
 
@@ -18,8 +19,9 @@ export class FirebaseAuthModule {
           useValue: options.credentialsProvider,
         },
         FirebaseAuthService,
+        FirebaseAuthFacadeImpl,
       ],
-      exports: [FirebaseAuthService],
+      exports: [FirebaseAuthFacadeImpl],
       global: true,
     };
   }
@@ -37,8 +39,9 @@ export class FirebaseAuthModule {
           inject: options.inject || [],
         },
         FirebaseAuthService,
+        FirebaseAuthFacadeImpl,
       ],
-      exports: [FirebaseAuthService],
+      exports: [FirebaseAuthFacadeImpl],
       global: true,
     };
   }

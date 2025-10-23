@@ -166,4 +166,39 @@ export class FirebaseAuthService implements OnModuleInit {
       throw new TokenRefreshError('Failed to refresh token', error as Error);
     }
   }
+
+  async verifyCustomToken(customToken: string): Promise<VerifiedToken> {
+    try {
+      const credentials = await this.credentialsProvider.getCredentials();
+      
+      const response = await fetch(`https://identitytoolkit.googleapis.com/v1/accounts:signInWithCustomToken?key=${credentials.webApiKey}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          token: customToken,
+          returnSecureToken: true,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Custom token verification failed: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      
+      const decodedToken = await this.auth.verifyIdToken(data.idToken);
+      
+      return {
+        uid: decodedToken.uid,
+        email: decodedToken.email,
+        emailVerified: decodedToken.email_verified,
+        customClaims: decodedToken.custom_claims,
+        scopes: decodedToken.scopes as string[] || [],
+      };
+    } catch (error) {
+      throw new TokenVerificationError('Custom token verification failed', error as Error);
+    }
+  }
 }

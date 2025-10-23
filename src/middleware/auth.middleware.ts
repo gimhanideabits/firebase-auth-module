@@ -7,16 +7,14 @@ export class AuthMiddleware implements NestMiddleware {
   constructor(private readonly firebaseAuth: FirebaseAuthService) {}
 
   async use(req: Request, res: Response, next: NextFunction) {
-    const authHeader = req.headers.authorization;
+    const authToken = req.cookies?.authToken;
     
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      throw new UnauthorizedException('No token provided');
+    if (!authToken) {
+      throw new UnauthorizedException('No authentication token found');
     }
 
-    const token = authHeader.substring(7);
-
     try {
-      const decodedToken = await this.firebaseAuth.verifyToken(token);
+      const decodedToken = await this.firebaseAuth.verifyToken(authToken);
       req['user'] = decodedToken;
       next();
     } catch (error) {

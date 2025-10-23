@@ -1,9 +1,9 @@
 import { Injectable, CanActivate, ExecutionContext, UnauthorizedException } from '@nestjs/common';
-import { FirebaseAuthService } from '@app/firebase-auth';
+import { CustomJwtService, CustomJwtPayload } from '../services/custom-jwt.service';
 
 @Injectable()
-export class AuthGuard implements CanActivate {
-  constructor(private readonly firebaseAuth: FirebaseAuthService) {}
+export class CustomJwtAuthGuard implements CanActivate {
+  constructor(private readonly customJwtService: CustomJwtService) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest();
@@ -18,14 +18,14 @@ export class AuthGuard implements CanActivate {
     console.log('Extracted Token:', authToken.substring(0, 20) + '...');
 
     try {
-      const decodedToken = await this.firebaseAuth.verifyToken(authToken);
-      console.log('Decoded Token:', decodedToken);
+      const decodedToken: CustomJwtPayload = this.customJwtService.verifyToken(authToken);
+      console.log('Decoded JWT Token:', decodedToken);
       
       request.user = decodedToken;
       return true;
     } catch (error) {
-      console.error('Token verification error:', error);
-      throw new UnauthorizedException(`Invalid token: ${error.message}`);
+      console.error('JWT verification error:', error);
+      throw new UnauthorizedException(`Invalid JWT token: ${error.message}`);
     }
   }
 }

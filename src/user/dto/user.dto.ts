@@ -26,6 +26,11 @@ export class RefreshTokenDto {
   refreshToken: string;
 }
 
+export class ValidateCustomTokenDto {
+  @IsString()
+  customToken: string;
+}
+
 export class UserResponseDto {
   uid: string;
   email: string;

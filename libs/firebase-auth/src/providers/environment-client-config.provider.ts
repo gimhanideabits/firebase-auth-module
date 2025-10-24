@@ -1,19 +1,6 @@
 import { Injectable } from '@nestjs/common';
-import { FirebaseCredentialsProvider } from './firebase-credentials-provider.abstract';
-import type { FirebaseCredentials } from '../interfaces';
-
-export interface FirebaseClientConfig {
-  apiKey: string;
-  authDomain: string;
-  projectId: string;
-  storageBucket: string;
-  messagingSenderId?: string;
-  appId?: string;
-}
-
-export abstract class FirebaseClientConfigProvider {
-  abstract getClientConfig(): Promise<FirebaseClientConfig>;
-}
+import { FirebaseClientConfigProvider } from './firebase-client-config-provider.abstract';
+import type { FirebaseClientConfig } from '../interfaces/firebase-client-config.interface';
 
 @Injectable()
 export class EnvironmentClientConfigProvider extends FirebaseClientConfigProvider {

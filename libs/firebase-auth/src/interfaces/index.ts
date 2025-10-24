@@ -1,4 +1,5 @@
 export * from './firebase-credentials.interface';
+export * from './firebase-client-config.interface';
 export * from './user-creation-data.interface';
 export * from './token-verification-options.interface';
 export * from './verified-token.interface';

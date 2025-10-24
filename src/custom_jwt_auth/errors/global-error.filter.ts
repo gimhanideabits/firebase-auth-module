@@ -35,8 +35,7 @@ export class GlobalErrorFilter implements ExceptionFilter {
       errorResponse = this.handleUnknownError(exception, requestId, timestamp);
     }
 
-    response.status(errorResponse.errors[0]?.code === 'custom_token_exchange_failed' ? 401 : 
-                   errorResponse.errors[0]?.code.startsWith('invalid_') || errorResponse.errors[0]?.code.startsWith('missing_') ? 400 : 500)
+    response.status(this.getStatusCode(errorResponse))
            .json(errorResponse);
   }
 
@@ -76,7 +75,7 @@ export class GlobalErrorFilter implements ExceptionFilter {
   private handleUnknownError(exception: unknown, requestId: string, timestamp: string): ErrorResponse {
     return {
       ok: false,
-      message: 'token exchange failed',
+      message: 'An unexpected error occurred',
       errors: [{
         code: 'internal_server_error',
         error: 'An unexpected error occurred',
@@ -90,26 +89,40 @@ export class GlobalErrorFilter implements ExceptionFilter {
 
   private getErrorMessage(error: BaseError): string {
     if (error instanceof AuthError) {
-      return 'token exchange failed';
+      return 'Authentication failed';
     }
     if (error instanceof ValidationError) {
-      return 'token exchange failed';
+      return 'Validation failed';
     }
-    return 'token exchange failed';
+    return 'An error occurred';
   }
 
   private getHttpErrorMessage(status: number): string {
     switch (status) {
       case HttpStatus.BAD_REQUEST:
-        return 'token exchange failed';
+        return 'Bad request';
       case HttpStatus.UNAUTHORIZED:
-        return 'token exchange failed';
+        return 'Unauthorized';
       case HttpStatus.FORBIDDEN:
-        return 'token exchange failed';
+        return 'Forbidden';
       case HttpStatus.NOT_FOUND:
-        return 'token exchange failed';
+        return 'Not found';
+      case HttpStatus.METHOD_NOT_ALLOWED:
+        return 'Method not allowed';
+      case HttpStatus.CONFLICT:
+        return 'Conflict';
+      case HttpStatus.UNPROCESSABLE_ENTITY:
+        return 'Validation failed';
+      case HttpStatus.TOO_MANY_REQUESTS:
+        return 'Too many requests';
+      case HttpStatus.INTERNAL_SERVER_ERROR:
+        return 'Internal server error';
+      case HttpStatus.BAD_GATEWAY:
+        return 'Bad gateway';
+      case HttpStatus.SERVICE_UNAVAILABLE:
+        return 'Service unavailable';
       default:
-        return 'token exchange failed';
+        return 'An error occurred';
     }
   }
 
@@ -125,6 +138,46 @@ export class GlobalErrorFilter implements ExceptionFilter {
         return 'not_found';
       default:
         return 'internal_server_error';
+    }
+  }
+
+  private getStatusCode(errorResponse: ErrorResponse): number {
+    const errorCode = errorResponse.errors[0]?.code;
+    
+    // Custom error codes
+    if (errorCode === 'custom_token_exchange_failed') {
+      return HttpStatus.UNAUTHORIZED;
+    }
+    if (errorCode?.startsWith('invalid_') || errorCode?.startsWith('missing_')) {
+      return HttpStatus.BAD_REQUEST;
+    }
+    
+    // HTTP error codes
+    switch (errorCode) {
+      case 'bad_request':
+        return HttpStatus.BAD_REQUEST;
+      case 'unauthorized':
+        return HttpStatus.UNAUTHORIZED;
+      case 'forbidden':
+        return HttpStatus.FORBIDDEN;
+      case 'not_found':
+        return HttpStatus.NOT_FOUND;
+      case 'method_not_allowed':
+        return HttpStatus.METHOD_NOT_ALLOWED;
+      case 'conflict':
+        return HttpStatus.CONFLICT;
+      case 'validation_failed':
+        return HttpStatus.UNPROCESSABLE_ENTITY;
+      case 'too_many_requests':
+        return HttpStatus.TOO_MANY_REQUESTS;
+      case 'internal_server_error':
+        return HttpStatus.INTERNAL_SERVER_ERROR;
+      case 'bad_gateway':
+        return HttpStatus.BAD_GATEWAY;
+      case 'service_unavailable':
+        return HttpStatus.SERVICE_UNAVAILABLE;
+      default:
+        return HttpStatus.INTERNAL_SERVER_ERROR;
     }
   }
 

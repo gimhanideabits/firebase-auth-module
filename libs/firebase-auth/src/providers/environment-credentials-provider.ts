@@ -10,6 +10,12 @@ export class EnvironmentCredentialsProvider extends FirebaseCredentialsProvider 
     const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
     const webApiKey = process.env.FIREBASE_WEB_API_KEY;
 
+    console.log('Environment variables check:');
+    console.log('FIREBASE_PROJECT_ID:', projectId ? 'SET' : 'MISSING');
+    console.log('FIREBASE_PRIVATE_KEY:', privateKey ? 'SET' : 'MISSING');
+    console.log('FIREBASE_CLIENT_EMAIL:', clientEmail ? 'SET' : 'MISSING');
+    console.log('FIREBASE_WEB_API_KEY:', webApiKey ? 'SET' : 'MISSING');
+
     if (!projectId || !privateKey || !clientEmail || !webApiKey) {
       throw new Error('Missing required Firebase environment variables');
     }

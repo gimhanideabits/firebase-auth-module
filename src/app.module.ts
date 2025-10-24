@@ -5,7 +5,7 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { UserModule } from './user/user.module';
 import { CustomJwtAuthModule, GlobalErrorFilter } from './custom_jwt_auth';
-import { FirebaseAuthModule, EnvironmentCredentialsProvider } from '@app/firebase-auth';
+import { FirebaseAuthModule, EnvironmentCredentialsProvider, JsonFileCredentialsProvider } from '@app/firebase-auth';
 
 @Module({
   imports: [
@@ -13,7 +13,7 @@ import { FirebaseAuthModule, EnvironmentCredentialsProvider } from '@app/firebas
       isGlobal: true,
     }),
     FirebaseAuthModule.forRoot({
-      credentialsProvider: new EnvironmentCredentialsProvider(),
+      credentialsProvider: new JsonFileCredentialsProvider(),
     }),
     UserModule,
     CustomJwtAuthModule,

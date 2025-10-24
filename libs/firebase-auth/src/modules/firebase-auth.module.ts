@@ -1,6 +1,6 @@
 import { Module, DynamicModule } from '@nestjs/common';
 import { FirebaseAuthService } from '../services/firebase-auth.service';
-import { FirebaseCredentialsProvider } from '../providers';
+import { EnvironmentCredentialsProvider, FirebaseCredentialsProvider } from '../providers';
 import type { FirebaseCredentials } from '../interfaces';
 
 export interface FirebaseAuthModuleOptions {

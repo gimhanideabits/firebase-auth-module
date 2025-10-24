@@ -20,6 +20,7 @@ export class UserService {
       if (error.code === 'auth/email-already-exists') {
         throw new ConflictException('Email already exists');
       }
+      console.log(error);
       throw error;
     }
   }

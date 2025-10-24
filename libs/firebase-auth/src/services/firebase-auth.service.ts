@@ -38,7 +38,7 @@ export class FirebaseAuthService implements OnModuleInit {
         }),
         projectId: credentials.serviceAccount.projectId,
       });
-
+      console.log("Firebase Admin initialized");
       this.auth = admin.auth(this.app);
     } catch (error) {
       throw new ConfigurationError('Failed to initialize Firebase Admin', error as Error);

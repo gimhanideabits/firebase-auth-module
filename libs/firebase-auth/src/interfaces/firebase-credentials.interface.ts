@@ -5,4 +5,6 @@ export interface FirebaseCredentials {
     clientEmail: string;
   };
   webApiKey: string;
+  messagingSenderId?: string;
+  appId?: string;
 }

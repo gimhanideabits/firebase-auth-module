@@ -2,47 +2,69 @@ import { Injectable } from '@nestjs/common';
 import { FirebaseAuthService } from '@app/firebase-auth';
 import { CustomTokenExchangeError } from '../errors/auth.errors';
 import { TokenExchangeResult } from '../dto/session.dto';
+import { initializeApp, getApps, FirebaseApp } from 'firebase/app';
+import { getAuth, signInWithCustomToken, Auth } from 'firebase/auth';
+import { EnvironmentClientConfigProvider } from '@app/firebase-auth';
 
 @Injectable()
 export class TokenExchangeService {
-  constructor(private readonly firebaseAuthService: FirebaseAuthService) {}
+  private firebaseApp: FirebaseApp | null = null;
+  private auth: Auth | null = null;
+
+  constructor(
+    private readonly firebaseAuthService: FirebaseAuthService,
+    private readonly clientConfigProvider: EnvironmentClientConfigProvider
+  ) {}
 
   async exchangeCustomToken(customToken: string): Promise<TokenExchangeResult> {
     try {
-      const credentials = await this.firebaseAuthService.getCredentials();
+      await this.initializeFirebaseClient();
       
-      const response = await fetch(`https://identitytoolkit.googleapis.com/v1/accounts:signInWithCustomToken?key=${credentials.webApiKey}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          token: customToken,
-          returnSecureToken: true,
-        }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new CustomTokenExchangeError(
-          `Firebase rejected custom token: ${errorData.error?.message || response.statusText}`,
-          new Error(`HTTP ${response.status}: ${response.statusText}`)
-        );
-      }
-
-      const data = await response.json();
+      const userCredential = await signInWithCustomToken(this.auth!, customToken);
+      const user = userCredential.user;
+      
+   
+      const idToken = await user.getIdToken();
+      
+     
+      const refreshToken = (userCredential as any)._tokenResponse?.refreshToken || '';
+      
+    
+      const idTokenResult = await user.getIdTokenResult();
+      const expiresIn = Math.floor((new Date(idTokenResult.expirationTime).getTime() - Date.now()) / 1000);
       
       return {
-        idToken: data.idToken,
-        refreshToken: data.refreshToken,
-        expiresIn: parseInt(data.expiresIn) || 3600,
+        idToken,
+        refreshToken,
+        expiresIn: expiresIn > 0 ? expiresIn : 3600, 
       };
-    } catch (error) {
-      if (error instanceof CustomTokenExchangeError) {
-        throw error;
-      }
+    } catch (error: any) {
       throw new CustomTokenExchangeError(
-        'Failed to exchange custom token',
+        `Firebase rejected custom token: ${error.message}`,
+        error
+      );
+    }
+  }
+
+  private async initializeFirebaseClient(): Promise<void> {
+    if (this.firebaseApp && this.auth) {
+      return; // Already initialized
+    }
+
+    try {
+      const firebaseConfig = await this.clientConfigProvider.getClientConfig();
+
+      // Initialize Firebase app if not already initialized
+      if (getApps().length === 0) {
+        this.firebaseApp = initializeApp(firebaseConfig);
+      } else {
+        this.firebaseApp = getApps()[0];
+      }
+
+      this.auth = getAuth(this.firebaseApp);
+    } catch (error) {
+      throw new CustomTokenExchangeError(
+        'Failed to initialize Firebase client',
         error as Error
       );
     }

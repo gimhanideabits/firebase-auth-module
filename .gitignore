@@ -1,7 +1,5 @@
 node_modules
 dist
 .env
-<<<<<<< HEAD
-./firebase-service-account.json
-=======
->>>>>>> c2386ccf859042da6ca5d49f3f6e621450be04d4
+firebase-service-account.json
+package-lock.json

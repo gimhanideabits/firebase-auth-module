@@ -1,6 +1,7 @@
 import { Injectable, UnauthorizedException, ConflictException } from '@nestjs/common';
 import { FirebaseAuthService } from '@app/firebase-auth';
 import { SignupDto, SigninDto, UserResponseDto } from './dto/user.dto';
+import { auth } from 'firebase-admin';
 
 @Injectable()
 export class UserService {
@@ -44,12 +45,20 @@ export class UserService {
       }
 
       const data = await response.json();
+
+   
+      const customToken = await this.firebaseAuth.issueCustomToken({
+        uid: data.localId,
+        customClaims: {
+          email: signinDto.email,
+        },
+      });
       
       const userRecord = await this.getUserByEmail(signinDto.email);
       
       return {
         user: this.mapUserRecordToResponse(userRecord),
-        idToken: data.idToken,
+        idToken: customToken,
         refreshToken: data.refreshToken,
       };
     } catch (error) {

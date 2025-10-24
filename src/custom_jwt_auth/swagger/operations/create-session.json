@@ -1,0 +1,4 @@
+{
+  "summary": "Exchange Firebase custom token for ID and refresh tokens",
+  "description": "Exchanges a Firebase custom token for ID token and refresh token, returning them as secure HttpOnly cookies.\n\n## Authentication Flow\n1. Client obtains a Firebase custom token from your backend\n2. Client sends the custom token to this endpoint\n3. Server validates the custom token with Firebase\n4. Server exchanges it for ID token and refresh token\n5. Server sets HttpOnly cookies with the tokens\n6. Client can now make authenticated requests using the cookies\n\n## Cookie Security\n- **ID Token Cookie**: HttpOnly, expires with Firebase token expiry\n- **Refresh Token Cookie**: HttpOnly, Secure, SameSite=Strict, Path=/auth/refresh, 30-day expiry\n\n## Use Cases\n- Initial user authentication\n- Session establishment\n- Token refresh workflow"
+}

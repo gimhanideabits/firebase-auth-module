@@ -1,47 +1,39 @@
 import { Controller, Post, Body, Res, HttpCode, HttpStatus, UseFilters } from '@nestjs/common';
 import type { Response } from 'express';
 import { ApiTags } from '@nestjs/swagger';
-import { 
-  CreateSessionDto,
-  SessionSuccessResponse,
-  SessionErrorResponse,
-  CreateSessionRequest,
-  CreateSessionSuccessResult,
-  TokenExchangeResult,
-  CookieSettings
-} from '../dto/session.dto';
-import { TokenExchangeService } from '../services/token-exchange.service';
+import { RefreshTokenDto } from '../dto/refresh-token.dto';
+import { RefreshTokenService, RefreshTokenResult } from '../services/refresh-token.service';
 import { GlobalErrorFilter } from '../errors/global-error.filter';
 import { 
-  CreateSessionApiOperation,
-  CreateSessionApiBody,
-  CreateSessionApiResponse200,
-  CreateSessionApiResponse400,
-  CreateSessionApiResponse401
+  RefreshTokenApiOperation,
+  RefreshTokenApiBody,
+  RefreshTokenApiResponse200,
+  RefreshTokenApiResponse400,
+  RefreshTokenApiResponse401
 } from '../swagger/decorators/auth';
 
 @ApiTags('Authentication')
 @Controller('auth')
 @UseFilters(GlobalErrorFilter)
-export class SessionsController {
-  constructor(private readonly tokenExchangeService: TokenExchangeService) {}
+export class RefreshTokenController {
+  constructor(private readonly refreshTokenService: RefreshTokenService) {}
 
-  @Post('sessions')
+  @Post('refresh')
   @HttpCode(HttpStatus.OK)
-  @CreateSessionApiOperation
-  @CreateSessionApiBody
-  @CreateSessionApiResponse200
-  @CreateSessionApiResponse400
-  @CreateSessionApiResponse401
-  async createSession(@Body() createSessionDto: CreateSessionDto, @Res() res: Response): Promise<void> {
+  @RefreshTokenApiOperation
+  @RefreshTokenApiBody
+  @RefreshTokenApiResponse200
+  @RefreshTokenApiResponse400
+  @RefreshTokenApiResponse401
+  async refreshToken(@Body() refreshTokenDto: RefreshTokenDto, @Res() res: Response): Promise<void> {
     try {
-      const tokenResult: TokenExchangeResult = await this.tokenExchangeService.exchangeCustomToken(createSessionDto.custom_token);
+      const tokenResult: RefreshTokenResult = await this.refreshTokenService.refreshIdToken(refreshTokenDto.refresh_token);
       
       this.setCookies(res, tokenResult);
       
-      const response: SessionSuccessResponse = {
+      const response = {
         ok: true,
-        message: 'token exchanged successfully',
+        message: 'token refreshed successfully',
         data: {},
         metadata: {
           request_id: this.generateRequestId(),
@@ -55,14 +47,14 @@ export class SessionsController {
     }
   }
 
-  private setCookies(res: Response, tokenResult: TokenExchangeResult): void {
-    const cookieSettings: CookieSettings = this.getCookieSettings(tokenResult.expiresIn);
+  private setCookies(res: Response, tokenResult: RefreshTokenResult): void {
+    const cookieSettings = this.getCookieSettings(tokenResult.expiresIn);
 
     res.cookie('id_token', tokenResult.idToken, cookieSettings.idToken);
     res.cookie('refresh_token', tokenResult.refreshToken, cookieSettings.refreshToken);
   }
 
-  private getCookieSettings(expiresIn: number): CookieSettings {
+  private getCookieSettings(expiresIn: number): { idToken: any; refreshToken: any } {
     const idTokenMaxAge = expiresIn * 1000;
     const refreshTokenMaxAge = expiresIn * 1000; // Use Firebase's default TTL
 

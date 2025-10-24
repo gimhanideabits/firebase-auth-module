@@ -1,4 +1,4 @@
-import { IsString, IsNotEmpty, Length } from 'class-validator';
+import { IsString, IsNotEmpty, Length, Matches } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 // Request DTOs
@@ -25,6 +25,9 @@ export class CreateSessionDto {
   @IsString({ message: 'Custom token must be a string' })
   @IsNotEmpty({ message: 'Custom token is required' })
   @Length(10, 2000, { message: 'Custom token length must be between 10 and 2000 characters' })
+  @Matches(/^[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+$/, { 
+    message: 'Custom token must be a valid JWT format' 
+  })
   custom_token: string;
 }
 

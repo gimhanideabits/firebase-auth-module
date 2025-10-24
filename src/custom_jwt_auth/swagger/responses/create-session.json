@@ -1,0 +1,83 @@
+{
+  "200": {
+    "description": "Token exchange successful",
+    "schema": {
+      "type": "object",
+      "properties": {
+        "ok": { "type": "boolean", "example": true },
+        "message": { "type": "string", "example": "token exchanged successfully" },
+        "data": { "type": "object", "example": {} },
+        "metadata": {
+          "type": "object",
+          "properties": {
+            "request_id": { "type": "string", "example": "a1b2-c3d4-e5f6-g7h8" },
+            "timestamp": { "type": "string", "example": "2025-01-23T00:00:00Z" }
+          }
+        }
+      }
+    },
+    "headers": {
+      "Set-Cookie": {
+        "description": "HttpOnly cookies containing ID token and refresh token",
+        "schema": {
+          "type": "string",
+          "example": "id_token=eyJhbGciOiJSUzI1NiIs...; HttpOnly; Secure; SameSite=Strict; Path=/auth/refresh"
+        }
+      }
+    }
+  },
+  "400": {
+    "description": "Bad request - invalid custom token",
+    "schema": {
+      "type": "object",
+      "properties": {
+        "ok": { "type": "boolean", "example": false },
+        "message": { "type": "string", "example": "token exchange failed" },
+        "errors": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "code": { "type": "string", "example": "bad_request" },
+              "error": { "type": "string", "example": "invalid token provided" }
+            }
+          }
+        },
+        "metadata": {
+          "type": "object",
+          "properties": {
+            "request_id": { "type": "string", "example": "a1b2-c3d4-e5f6-g7h8" },
+            "timestamp": { "type": "string", "example": "2025-01-23T00:00:00Z" }
+          }
+        }
+      }
+    }
+  },
+  "401": {
+    "description": "Unauthorized - Firebase rejected the token",
+    "schema": {
+      "type": "object",
+      "properties": {
+        "ok": { "type": "boolean", "example": false },
+        "message": { "type": "string", "example": "token exchange failed" },
+        "errors": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "code": { "type": "string", "example": "custom_token_exchange_failed" },
+              "error": { "type": "string", "example": "Firebase rejected custom token" }
+            }
+          }
+        },
+        "metadata": {
+          "type": "object",
+          "properties": {
+            "request_id": { "type": "string", "example": "a1b2-c3d4-e5f6-g7h8" },
+            "timestamp": { "type": "string", "example": "2025-01-23T00:00:00Z" }
+          }
+        }
+      }
+    }
+  }
+}

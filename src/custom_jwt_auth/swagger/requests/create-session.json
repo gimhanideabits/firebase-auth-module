@@ -1,0 +1,20 @@
+{
+  "type": "CreateSessionDto",
+  "description": "Firebase custom token to exchange for ID and refresh tokens",
+  "examples": {
+    "validToken": {
+      "summary": "Valid custom token",
+      "description": "A properly formatted Firebase custom token",
+      "value": {
+        "custom_token": "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJodHRwczovL2lkZW50aXR5dG9vbGtpdC5nb29nbGVhcGlzLmNvbS9nb29nbGUuaWRlbnRpdHkuaWRlbnRpdHl0b29sa2l0LnYxLlRva2VuIiwiaXNzIjoiaHR0cHM6Ly9zZWN1cmV0b2tlbi5nb29nbGUuY29tL2dldC10ZXN0ZWQtZGVtbyIsInN1YiI6IjEyMzQ1Njc4OTAifQ.example_signature"
+      }
+    },
+    "invalidToken": {
+      "summary": "Invalid custom token",
+      "description": "An invalid or malformed token that will be rejected",
+      "value": {
+        "custom_token": "invalid_token_here"
+      }
+    }
+  }
+}

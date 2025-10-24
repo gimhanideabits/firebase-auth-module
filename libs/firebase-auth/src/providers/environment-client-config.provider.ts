@@ -1,9 +1,8 @@
 import { Injectable } from '@nestjs/common';
-import { FirebaseClientConfigProvider } from './firebase-client-config-provider.abstract';
 import type { FirebaseClientConfig } from '../interfaces/firebase-client-config.interface';
 
 @Injectable()
-export class EnvironmentClientConfigProvider extends FirebaseClientConfigProvider {
+export class EnvironmentClientConfigProvider {
   async getClientConfig(): Promise<FirebaseClientConfig> {
     const projectId = process.env.FIREBASE_PROJECT_ID;
     const webApiKey = process.env.FIREBASE_WEB_API_KEY;

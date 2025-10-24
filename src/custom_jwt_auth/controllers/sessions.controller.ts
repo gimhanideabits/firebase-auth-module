@@ -1,7 +1,6 @@
 import { Controller, Post, Body, Res, HttpCode, HttpStatus, UseFilters } from '@nestjs/common';
 import type { Response } from 'express';
 import { ApiTags, ApiOperation, ApiResponse, ApiBody } from '@nestjs/swagger';
-<<<<<<< HEAD
 import { 
   CreateSessionDto,
   SessionSuccessResponse,
@@ -11,10 +10,6 @@ import {
   TokenExchangeResult,
   CookieSettings
 } from '../dto/session.dto';
-=======
-import { CreateSessionDto } from '../dto/session.dto';
-import type { SessionResponse } from '../dto/session.dto';
->>>>>>> c2386ccf859042da6ca5d49f3f6e621450be04d4
 import { TokenExchangeService } from '../services/token-exchange.service';
 import { GlobalErrorFilter } from '../errors/global-error.filter';
 import { 
@@ -166,7 +161,6 @@ export class SessionsController {
     }
   }
 
-<<<<<<< HEAD
   private setCookies(res: Response, tokenResult: TokenExchangeResult): void {
     const cookieSettings: CookieSettings = this.getCookieSettings(tokenResult.expiresIn);
 
@@ -193,26 +187,6 @@ export class SessionsController {
         maxAge: refreshTokenMaxAge,
       },
     };
-=======
-  private setCookies(res: Response, tokenResult: { idToken: string; refreshToken: string; expiresIn: number }): void {
-    const idTokenMaxAge = tokenResult.expiresIn * 1000;
-    const refreshTokenMaxAge = 30 * 24 * 60 * 60 * 1000; // 30 days
-
-    res.cookie('id_token', tokenResult.idToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
-      maxAge: idTokenMaxAge,
-    });
-
-    res.cookie('refresh_token', tokenResult.refreshToken, {
-      httpOnly: true,
-      secure: true,
-      sameSite: 'strict',
-      path: '/auth/refresh',
-      maxAge: refreshTokenMaxAge,
-    });
->>>>>>> c2386ccf859042da6ca5d49f3f6e621450be04d4
   }
 
   private generateRequestId(): string {
